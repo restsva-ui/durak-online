@@ -121,3 +121,34 @@ test("two-player round resolves when both players run out of cards", () => {
   assert.equal(defended.phase, "finished");
   assert.equal(defended.table.length, 0);
 });
+
+
+test("another player may throw in a matching rank while defense is in progress", () => {
+  const state: GameState = {
+    version: 1,
+    mode: "throw-in",
+    phase: "defense",
+    players: [
+      { id: "a", name: "A", hand: [{ id: "a-6s", suit: "spades", rank: 6 }] },
+      { id: "b", name: "B", hand: [
+        { id: "b-7s", suit: "spades", rank: 7 },
+        { id: "b-8h", suit: "hearts", rank: 8 },
+        { id: "b-9c", suit: "clubs", rank: 9 },
+      ] },
+      { id: "c", name: "C", hand: [{ id: "c-6h", suit: "hearts", rank: 6 }] },
+    ],
+    drawPile: [],
+    trumpSuit: "diamonds",
+    table: [{ attack: { id: "a-6s", suit: "spades", rank: 6 } }],
+    attackerId: "a",
+    defenderId: "b",
+    passedPlayerIds: [],
+    winnerId: undefined,
+    loserId: undefined,
+  };
+
+  const afterThrowIn = applyAction(state, { type: "attack", playerId: "c", cardId: "c-6h" });
+  assert.equal(afterThrowIn.table.length, 2);
+  assert.equal(afterThrowIn.table[1]?.attack.id, "c-6h");
+  assert.equal(afterThrowIn.phase, "defense");
+});
