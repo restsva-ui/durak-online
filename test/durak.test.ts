@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { applyAction, createDeck, getPlayerView, RuleError, startGame } from "../src/durak.js";
+import { applyAction, createDeck, getPlayerView, RuleError, startGame, type GameState } from "../src/durak.js";
 
 const players = [
   { id: "a", name: "A" },
@@ -55,4 +55,69 @@ test("player view never reveals opponents' cards", () => {
 test("rejects more than six players", () => {
   const tooMany = Array.from({ length: 7 }, (_, i) => ({ id: String(i), name: String(i) }));
   assert.throws(() => startGame(tooMany, "throw-in"), RuleError);
+});
+
+
+test("transfer mode changes the defender to the next player", () => {
+  const state: GameState = {
+    version: 1,
+    mode: "transfer",
+    phase: "attack",
+    players: [
+      { id: "a", name: "A", hand: [
+        { id: "a-6s", suit: "spades", rank: 6 },
+        { id: "a-8h", suit: "hearts", rank: 8 },
+        { id: "a-9c", suit: "clubs", rank: 9 },
+      ] },
+      { id: "b", name: "B", hand: [
+        { id: "b-6h", suit: "hearts", rank: 6 },
+        { id: "b-7c", suit: "clubs", rank: 7 },
+        { id: "b-10c", suit: "clubs", rank: 10 },
+      ] },
+    ],
+    drawPile: [],
+    trumpSuit: "diamonds",
+    table: [],
+    attackerId: "a",
+    defenderId: "b",
+    passedPlayerIds: [],
+    winnerId: undefined,
+    loserId: undefined,
+  };
+
+  const attacked = applyAction(state, { type: "attack", playerId: "a", cardId: "a-6s" });
+  const transferred = applyAction(attacked, { type: "transfer", playerId: "b", cardId: "b-6h" });
+  assert.equal(transferred.defenderId, "a");
+  assert.equal(transferred.table.length, 2);
+  assert.equal(transferred.table[1]?.attack.id, "b-6h");
+});
+
+test("two-player round resolves when both players run out of cards", () => {
+  const state: GameState = {
+    version: 1,
+    mode: "throw-in",
+    phase: "attack",
+    players: [
+      { id: "a", name: "A", hand: [{ id: "a-6c", suit: "clubs", rank: 6 }] },
+      { id: "b", name: "B", hand: [{ id: "b-7c", suit: "clubs", rank: 7 }] },
+    ],
+    drawPile: [],
+    trumpSuit: "hearts",
+    table: [],
+    attackerId: "a",
+    defenderId: "b",
+    passedPlayerIds: [],
+    winnerId: undefined,
+    loserId: undefined,
+  };
+
+  const attacked = applyAction(state, { type: "attack", playerId: "a", cardId: "a-6c" });
+  const defended = applyAction(attacked, {
+    type: "defend",
+    playerId: "b",
+    attackCardId: "a-6c",
+    defenseCardId: "b-7c",
+  });
+  assert.equal(defended.phase, "finished");
+  assert.equal(defended.table.length, 0);
 });
