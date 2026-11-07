@@ -247,7 +247,9 @@ export function applyAction(current: GameState, action: GameAction): GameState {
 
   switch (action.type) {
     case "attack": {
-      if (state.phase !== "attack") throw new RuleError("Зараз не можна починати або продовжувати атаку.");
+      if (state.phase !== "attack" && state.phase !== "defense") {
+        throw new RuleError("Зараз не можна починати або продовжувати атаку.");
+      }
       if (actor.id === state.defenderId) throw new RuleError("Захисник не може підкидати карти.");
       if (state.passedPlayerIds.includes(actor.id)) throw new RuleError("Гравець уже завершив підкидання цього раунду.");
       if (state.table.length === 0 && actor.id !== state.attackerId) {
