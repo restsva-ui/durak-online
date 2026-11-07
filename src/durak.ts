@@ -213,7 +213,7 @@ function settleRound(state: GameState, defenderTook: boolean): void {
     // After taking, the player to the defender's left starts the next attack.
     state.table = [];
     state.passedPlayerIds = [];
-    refillHands(state, oldAttacker, false);
+    refillHands(state, oldAttacker, true);
     state.attackerId = nextPlayerId(state, oldDefender);
   } else {
     // Successful defense: discard the table; the old defender attacks next.
@@ -279,7 +279,7 @@ export function applyAction(current: GameState, action: GameAction): GameState {
       if (!card || !state.table.some((pair) => pair.attack.rank === card.rank)) {
         throw new RuleError("Для переведення потрібна карта того самого рангу, що й атака.");
       }
-      const nextDefenderId = nextPlayerId(state, state.defenderId, new Set([state.attackerId]));
+      const nextDefenderId = nextPlayerId(state, state.defenderId);
       if (playerById(state, nextDefenderId).hand.length < state.table.length + 1) {
         throw new RuleError("У наступного гравця недостатньо карт для прийняття переведеної атаки.");
       }
