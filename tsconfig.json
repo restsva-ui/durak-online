@@ -8,7 +8,11 @@
     "exactOptionalPropertyTypes": true,
     "skipLibCheck": true,
     "declaration": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "allowImportingTsExtensions": true
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts"
+  ]
 }
