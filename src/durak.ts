@@ -34,8 +34,8 @@ export interface GameState {
   attackerId: string;
   defenderId: string;
   passedPlayerIds: string[];
-  winnerId?: string;
-  loserId?: string;
+  winnerId: string | undefined;
+  loserId: string | undefined;
 }
 
 export type GameAction =
@@ -90,7 +90,7 @@ function playerById(state: GameState, playerId: string): Player {
 function removeCard(player: Player, cardId: string): Card {
   const index = player.hand.findIndex((card) => card.id === cardId);
   if (index < 0) throw new RuleError("Цієї карти немає у гравця на руках.");
-  return player.hand.splice(index, 1)[0];
+  return player.hand.splice(index, 1)[0]!;
 }
 
 function canBeat(attack: Card, defense: Card, trumpSuit: Suit): boolean {
@@ -108,8 +108,8 @@ function finishIfNeeded(state: GameState): void {
   if (stillInGame.length <= 1) {
     state.phase = "finished";
     if (stillInGame.length === 1) {
-      state.loserId = stillInGame[0].id;
-      state.winnerId = state.players.find((player) => player.id !== stillInGame[0].id)?.id;
+      state.loserId = stillInGame[0]!.id;
+      state.winnerId = state.players.find((player) => player.id !== stillInGame[0]!.id)?.id;
     } else {
       // A rare simultaneous-outcome edge case: no player remains with cards.
       state.winnerId = undefined;
@@ -169,6 +169,8 @@ export function startGame(
     attackerId,
     defenderId: "",
     passedPlayerIds: [],
+    winnerId: undefined,
+    loserId: undefined,
   };
   state.defenderId = nextPlayerId(state, attackerId);
   assertRoundParticipants(state);
