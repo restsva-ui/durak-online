@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "test": "tsx --test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "vite build"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5"
   }
 }
