@@ -149,6 +149,8 @@ function gameView(): string {
   const room = state.room!;
   const me = game.players.find((player) => player.hand !== undefined);
   const isDefender = game.defenderId === me?.id;
+  const defenderTurn = isDefender && game.phase === "defense";
+  const canAttack = !isDefender && (game.table.length > 0 || game.attackerId === me?.id);
   const hand = me?.hand ?? [];
   const selected = hand.find((card) => card.id === state.selectedCardId);
   const isFinished = game.phase === "finished";
@@ -170,9 +172,9 @@ function gameView(): string {
     </section>
     <section class="hand-section"><div class="section-heading"><h2>Твої карти</h2><span class="count-pill">${hand.length}</span></div><div class="hand">${hand.map((card) => cardMarkup(card, card.id === state.selectedCardId)).join("")}</div></section>
     <section class="actions">
-      ${!isFinished && !isDefender ? `<button class="primary-button" id="do-attack" ${selected && !state.busy ? "" : "disabled"}>${game.table.length ? "Підкинути карту" : "Атакувати"}</button>` : ""}
-      ${!isFinished && isDefender ? `<button class="primary-button" id="take-cards" ${state.busy ? "disabled" : ""}>Забрати карти</button>` : ""}
-      ${!isFinished && isDefender && room.mode === "transfer" && game.table.every((pair) => !pair.defense) ? `<button class="secondary-button" id="transfer" ${selected && !state.busy ? "" : "disabled"}>Перевести</button>` : ""}
+      ${!isFinished && canAttack ? `<button class="primary-button" id="do-attack" ${selected && !state.busy ? "" : "disabled"}>${game.table.length ? "Підкинути карту" : "Атакувати"}</button>` : ""}
+      ${!isFinished && defenderTurn ? `<button class="primary-button" id="take-cards" ${state.busy ? "disabled" : ""}>Забрати карти</button>` : ""}
+      ${!isFinished && defenderTurn && room.mode === "transfer" && game.table.every((pair) => !pair.defense) ? `<button class="secondary-button" id="transfer" ${selected && !state.busy ? "" : "disabled"}>Перевести</button>` : ""}
       ${!isFinished && !isDefender && game.phase === "attack" && game.table.length ? `<button class="secondary-button" id="pass" ${state.busy ? "disabled" : ""}>Пас</button>` : ""}
       ${selected ? '<button class="text-button" id="clear-selection">Скасувати вибір</button>' : ""}
     </section>
