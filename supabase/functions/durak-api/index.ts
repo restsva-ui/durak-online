@@ -109,6 +109,10 @@ function displayName(user: TelegramUser): string {
   return name || (user.username ? `@${user.username}` : `Гравець ${user.id.slice(-4)}`);
 }
 
+function secureRandom(): number {
+  return crypto.getRandomValues(new Uint32Array(1))[0]! / 0x1_0000_0000;
+}
+
 function inviteCode(): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const bytes = crypto.getRandomValues(new Uint8Array(6));
@@ -251,6 +255,7 @@ async function handle(body: Record<string, unknown>, user: TelegramUser) {
     const state = startGame(
       members.map((member) => ({ id: member.telegram_id, name: member.display_name })),
       room.mode as GameMode,
+      secureRandom,
     );
     const { data: updated, error: updateError } = await db
       .from("durak_rooms")
