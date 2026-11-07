@@ -1,0 +1,4 @@
+project_id = "durak-online"
+
+[functions.durak-api]
+verify_jwt = false
