@@ -249,7 +249,7 @@ async function handle(body: Record<string, unknown>, user: TelegramUser) {
       .order("seat");
     if (error) throw error;
     const playerView = room.state ? getPlayerView(room.state, user.id) : null;
-    return { room: { id: room.id, invite_code: room.invite_code, mode: room.mode, status: room.status, state_version: room.state_version }, players: members ?? [], game: playerView };
+    return { room: { id: room.id, invite_code: room.invite_code, mode: room.mode, status: room.status, state_version: room.state_version, is_owner: room.owner_telegram_id === user.id }, players: members ?? [], game: playerView };
   }
 
   if (operation === "start_game") {
