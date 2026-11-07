@@ -224,9 +224,13 @@ function settleRound(state: GameState, defenderTook: boolean): void {
     state.table = [];
     state.passedPlayerIds = [];
     refillHands(state, oldAttacker, true);
-    state.attackerId = state.players.find((player) => player.id === oldDefender)?.hand.length
-      ? oldDefender
-      : nextPlayerId(state, oldDefender);
+    if (playerById(state, oldDefender).hand.length > 0) {
+      state.attackerId = oldDefender;
+    } else {
+      state.attackerId = activePlayerIds(state).length > 0
+        ? nextPlayerId(state, oldDefender)
+        : oldDefender;
+    }
   }
   finishIfNeeded(state);
   if (state.phase !== "finished") {
@@ -286,7 +290,7 @@ export function applyAction(current: GameState, action: GameAction): GameState {
       if (!card || !state.table.some((pair) => pair.attack.rank === card.rank)) {
         throw new RuleError("Для переведення потрібна карта того самого рангу, що й атака.");
       }
-      const nextDefenderId = nextPlayerId(state, state.defenderId);
+      const nextDefenderId = nextPlayerId(state, state.defenderId, new Set([state.defenderId]));
       if (playerById(state, nextDefenderId).hand.length < state.table.length + 1) {
         throw new RuleError("У наступного гравця недостатньо карт для прийняття переведеної атаки.");
       }
@@ -327,14 +331,14 @@ export function getPlayerView(state: GameState, viewerId: string) {
       id: player.id,
       name: player.name,
       cardCount: player.hand.length,
-      hand: player.id === viewerId ? player.hand : undefined,
+      hand: player.id === viewerId ? structuredClone(player.hand) : undefined,
     })),
     drawPileCount: state.drawPile.length,
     trumpSuit: state.trumpSuit,
     table: structuredClone(state.table),
     attackerId: state.attackerId,
     defenderId: state.defenderId,
-    passedPlayerIds: state.passedPlayerIds,
+    passedPlayerIds: [...state.passedPlayerIds],
     winnerId: state.winnerId,
     loserId: state.loserId,
   };
