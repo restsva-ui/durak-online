@@ -139,6 +139,7 @@ export function startGame(
   if (new Set(inputPlayers.map((player) => player.id)).size !== inputPlayers.length) {
     throw new RuleError("ID гравців мають бути унікальними.");
   }
+  if (mode !== "throw-in" && mode !== "transfer") throw new RuleError("Невідомий режим гри.");
   const deck = shuffled(createDeck(), random);
   // With six players all 36 cards are dealt. The last shuffled card still defines trump.
   const trumpSuit = deck[deck.length - 1].suit;
@@ -182,25 +183,15 @@ function allAttackersPassed(state: GameState): boolean {
 }
 
 function refillHands(state: GameState, firstPlayerId: string, defenderLast: boolean): void {
-  const order: string[] = [];
-  let cursor = firstPlayerId;
-  const excluded = new Set<string>();
-  while (order.length < state.players.length) {
-    const player = state.players.find((item) => item.id === cursor);
-    if (player && !order.includes(cursor)) order.push(cursor);
-    try {
-      cursor = nextPlayerId(state, cursor, excluded);
-    } catch {
-      break;
-    }
-    if (order.length >= state.players.length) break;
-  }
-  const drawOrder = order.filter((id) => id !== state.defenderId);
-  if (defenderLast && state.players.find((p) => p.id === state.defenderId)?.hand.length === 0) {
-    drawOrder.push(state.defenderId);
-  } else if (defenderLast && !drawOrder.includes(state.defenderId)) {
-    drawOrder.push(state.defenderId);
-  }
+  const start = state.players.findIndex((player) => player.id === firstPlayerId);
+  if (start < 0) throw new RuleError("Не вдалося визначити порядок добору карт.");
+  const clockwise = Array.from(
+    { length: state.players.length },
+    (_, offset) => state.players[(start + offset) % state.players.length]!.id,
+  );
+  const drawOrder = defenderLast
+    ? [...clockwise.filter((id) => id !== state.defenderId), state.defenderId]
+    : clockwise;
   for (const id of drawOrder) {
     const player = playerById(state, id);
     while (player.hand.length < 6 && state.drawPile.length > 0) {
@@ -220,16 +211,18 @@ function settleRound(state: GameState, defenderTook: boolean): void {
       if (pair.defense) defender.hand.push(pair.defense);
     }
     // After taking, the player to the defender's left starts the next attack.
-    state.attackerId = nextPlayerId(state, oldDefender);
     state.table = [];
     state.passedPlayerIds = [];
     refillHands(state, oldAttacker, false);
+    state.attackerId = nextPlayerId(state, oldDefender);
   } else {
     // Successful defense: discard the table; the old defender attacks next.
     state.table = [];
-    state.attackerId = oldDefender;
     state.passedPlayerIds = [];
     refillHands(state, oldAttacker, true);
+    state.attackerId = state.players.find((player) => player.id === oldDefender)?.hand.length
+      ? oldDefender
+      : nextPlayerId(state, oldDefender);
   }
   finishIfNeeded(state);
   if (state.phase !== "finished") {
@@ -249,6 +242,9 @@ export function applyAction(current: GameState, action: GameAction): GameState {
       if (state.phase !== "attack") throw new RuleError("Зараз не можна починати або продовжувати атаку.");
       if (actor.id === state.defenderId) throw new RuleError("Захисник не може підкидати карти.");
       if (state.passedPlayerIds.includes(actor.id)) throw new RuleError("Гравець уже завершив підкидання цього раунду.");
+      if (state.table.length === 0 && actor.id !== state.attackerId) {
+        throw new RuleError("Першу атаку має починати визначений нападник.");
+      }
       if (state.table.length >= 6 || state.table.length >= playerById(state, state.defenderId).hand.length) {
         throw new RuleError("Досягнуто ліміту карт для атаки.");
       }
@@ -328,7 +324,7 @@ export function getPlayerView(state: GameState, viewerId: string) {
     })),
     drawPileCount: state.drawPile.length,
     trumpSuit: state.trumpSuit,
-    table: state.table,
+    table: structuredClone(state.table),
     attackerId: state.attackerId,
     defenderId: state.defenderId,
     passedPlayerIds: state.passedPlayerIds,
