@@ -200,6 +200,18 @@ async function handle(body: Record<string, unknown>, user: TelegramUser) {
     const seat = [0, 1, 2, 3, 4, 5].find((value) => !occupied.has(value));
     if (seat === undefined) throw new Error("Немає вільного місця.");
 
+    // Claim the current room version so joining cannot race with the host starting the game.
+    const { data: claimed, error: claimError } = await db
+      .from("durak_rooms")
+      .update({ state_version: room.state_version + 1, updated_at: new Date().toISOString() })
+      .eq("id", room.id)
+      .eq("state_version", room.state_version)
+      .eq("status", "waiting")
+      .select("id")
+      .maybeSingle();
+    if (claimError) throw claimError;
+    if (!claimed) throw new Error("Кімната щойно змінилася. Онови список гравців.");
+
     const { error: insertError } = await db.from("durak_room_players").insert({
       room_id: room.id,
       telegram_id: user.id,
