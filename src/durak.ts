@@ -270,7 +270,10 @@ export function applyAction(current: GameState, action: GameAction): GameState {
       if (!defenseCard) throw new RuleError("Карти для захисту немає на руках.");
       if (!canBeat(pair.attack, defenseCard, state.trumpSuit)) throw new RuleError("Цією картою не можна побити атаку.");
       pair.defense = removeCard(actor, action.defenseCardId);
-      if (state.table.every((item) => item.defense)) state.phase = "attack";
+      if (state.table.every((item) => item.defense)) {
+        state.phase = "attack";
+        if (allAttackersPassed(state)) settleRound(state, false);
+      }
       return state;
     }
     case "transfer": {
