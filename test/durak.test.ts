@@ -32,7 +32,7 @@ test("six players can start even when the stock is empty", () => {
 
 test("rejects illegal defense and leaves original state unchanged", () => {
   const game = startGame(players, "throw-in", () => 0.42);
-  const attackCard = game.players.find((p) => p.id === game.attackerId)!.hand[0];
+  const attackCard = game.players.find((p) => p.id === game.attackerId)!.hand[0]!;
   const afterAttack = applyAction(game, { type: "attack", playerId: game.attackerId, cardId: attackCard.id });
   const defender = afterAttack.players.find((p) => p.id === afterAttack.defenderId)!;
   const illegal = defender.hand.find((card) => card.suit !== afterAttack.trumpSuit && card.suit !== attackCard.suit);
