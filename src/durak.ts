@@ -64,7 +64,9 @@ function shuffled<T>(items: T[], random: () => number): T[] {
   const result = [...items];
   for (let i = result.length - 1; i > 0; i -= 1) {
     const j = Math.floor(random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
+    const current = result[i]!;
+    result[i] = result[j]!;
+    result[j] = current;
   }
   return result;
 }
@@ -73,7 +75,7 @@ function nextPlayerId(state: GameState, fromId: string, excluded: Set<string> = 
   const start = state.players.findIndex((player) => player.id === fromId);
   if (start < 0) throw new RuleError("Гравця не знайдено.");
   for (let offset = 1; offset <= state.players.length; offset += 1) {
-    const player = state.players[(start + offset) % state.players.length];
+    const player = state.players[(start + offset) % state.players.length]!;
     if (player.hand.length > 0 && !excluded.has(player.id)) return player.id;
   }
   throw new RuleError("Немає активного гравця для наступного ходу.");
@@ -142,7 +144,7 @@ export function startGame(
   if (mode !== "throw-in" && mode !== "transfer") throw new RuleError("Невідомий режим гри.");
   const deck = shuffled(createDeck(), random);
   // With six players all 36 cards are dealt. The last shuffled card still defines trump.
-  const trumpSuit = deck[deck.length - 1].suit;
+  const trumpSuit = deck[deck.length - 1]!.suit;
   const players: Player[] = inputPlayers.map((player) => ({ ...player, hand: [] }));
   for (let round = 0; round < 6; round += 1) {
     for (const player of players) {
@@ -155,7 +157,7 @@ export function startGame(
     player.hand.filter((card) => card.suit === trumpSuit).map((card) => ({ playerId: player.id, card })),
   );
   const lowestTrump = trumpCandidates.sort((a, b) => a.card.rank - b.card.rank)[0];
-  const attackerId = lowestTrump?.playerId ?? players[0].id;
+  const attackerId = lowestTrump?.playerId ?? players[0]!.id;
   const state: GameState = {
     version: 1,
     mode,
